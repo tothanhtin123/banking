@@ -25,13 +25,23 @@ export const signIn = async ({ email, password }: signInProps) => {
   try {
     const { account } = await createAdminClient();
     const response = await account.createEmailPasswordSession(email, password);
+
+    const session = await account.createEmailPasswordSession(email, password);
+
+    cookies().set("appwrite-session", session.secret, {
+      path: "/",
+      httpOnly: true,
+      sameSite: "strict",
+      secure: true,
+    });
+
     return parseStringify(response);
   } catch (error) {
     console.error("Error", error);
   }
 };
 
-export const signUp = async ({password,...userData}: SignUpParams) => {
+export const signUp = async ({ password, ...userData }: SignUpParams) => {
   const { email, lastName, firstName } = userData;
 
   let newUserAccount;
@@ -46,28 +56,28 @@ export const signUp = async ({password,...userData}: SignUpParams) => {
       `${firstName} ${lastName}`
     );
 
-    if(!newUserAccount) throw new Error('Error creating user')
+    if (!newUserAccount) throw new Error("Error creating user");
 
     const dwollaCustomerUrl = await createDwollaCustomer({
       ...userData,
-      type:'personal',
-    })
+      type: "personal",
+    });
 
-    if(!dwollaCustomerUrl) throw new Error("Error creating Dwolla customer")
+    if (!dwollaCustomerUrl) throw new Error("Error creating Dwolla customer");
 
-      const dwollaCustomerId = extractCustomerIdFromUrl(dwollaCustomerUrl)
+    const dwollaCustomerId = extractCustomerIdFromUrl(dwollaCustomerUrl);
 
-      const newUser = await database.createDocument(
-        DATABASE_ID!,
-        USER_COLLECTION_ID!,
-        ID.unique(),
-        {
-          ...userData,
-          userId: newUserAccount.$id,
-          dwollaCustomerId,
-          dwollaCustomerUrl
-        }
-      )
+    const newUser = await database.createDocument(
+      DATABASE_ID!,
+      USER_COLLECTION_ID!,
+      ID.unique(),
+      {
+        ...userData,
+        userId: newUserAccount.$id,
+        dwollaCustomerId,
+        dwollaCustomerUrl,
+      }
+    );
 
     const session = await account.createEmailPasswordSession(email, password);
 
@@ -90,6 +100,7 @@ export const getLoggedInUser = async () => {
     const user = await account.get();
     return parseStringify(user);
   } catch (error) {
+    console.log("An error occurred while getting logged in user: ", error);
     return null;
   }
 };
