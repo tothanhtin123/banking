@@ -21,23 +21,21 @@ const {
   APPWRITE_TRANSACTION_COLLECTION_ID: TRANSACTION_COLLECTION_ID,
 } = process.env;
 
-export const getUserInfo = async ({userId}:getUserInfoProps) => {
-  try{
-    const {database} = await createAdminClient();
-  
+export const getUserInfo = async ({ userId }: getUserInfoProps) => {
+  try {
+    const { database } = await createAdminClient();
+
     const user = await database.listDocuments(
       DATABASE_ID!,
       USER_COLLECTION_ID!,
-      [Query.equal('userId',[userId])]
-    )
+      [Query.equal("userId", [userId])]
+    );
 
     return parseStringify(user.documents[0]);
-    
+  } catch (error) {
+    console.log(error);
   }
-  catch(error){
-    console.log(error)
-  }
-}
+};
 
 export const signIn = async ({ email, password }: signInProps) => {
   try {
@@ -54,8 +52,8 @@ export const signIn = async ({ email, password }: signInProps) => {
     });
 
     const user = await getUserInfo({
-      userId: session.userId
-    })
+      userId: session.userId,
+    });
 
     return parseStringify(user);
   } catch (error) {
@@ -120,7 +118,7 @@ export const getLoggedInUser = async () => {
   try {
     const { account } = await createSessionClient();
     const result = await account.get();
-    const user = await getUserInfo({userId:result.$id})
+    const user = await getUserInfo({ userId: result.$id });
     return parseStringify(user);
   } catch (error) {
     console.log("An error occurred while getting logged in user: ", error);
@@ -250,40 +248,56 @@ export const exchangePublicToken = async ({
   }
 };
 
-export const getBanks = async ({userId}:getBanksProps) => {
-  try{
+export const getBanks = async ({ userId }: getBanksProps) => {
+  try {
+    const { database } = await createAdminClient();
 
-    const {database} = await createAdminClient();
-  
     const banks = await database.listDocuments(
       DATABASE_ID!,
       BANK_COLLECTION_ID!,
-      [Query.equal('userId',[userId])]
-    )
+      [Query.equal("userId", [userId])]
+    );
 
     return parseStringify(banks.documents);
-    
+  } catch (error) {
+    console.log(error);
   }
-  catch(error){
-    console.log(error)
-  }
-}
+};
 
-export const getBank = async ({documentId}:getBankProps) => {
-  try{
+export const getBank = async ({ documentId }: getBankProps) => {
+  try {
+    const { database } = await createAdminClient();
 
-    const {database} = await createAdminClient();
-  
     const bank = await database.listDocuments(
       DATABASE_ID!,
       BANK_COLLECTION_ID!,
-      [Query.equal('$id',[documentId])]
-    )
+      [Query.equal("$id", [documentId])]
+    );
 
     return parseStringify(bank.documents[0]);
-    
+  } catch (error) {
+    console.log(error);
   }
-  catch(error){
-    console.log(error)
+};
+
+// get specific bank from bank collection by account id
+export const getBankByAccountId = async ({
+  accountId,
+}: getBankByAccountIdProps) => {
+  try {
+    const { database } = await createAdminClient();
+
+    const bank = await database.listDocuments(
+      DATABASE_ID!,
+      BANK_COLLECTION_ID!,
+      [Query.equal("accountId", [accountId])]
+    );
+
+    if (bank.total !== 1) return null;
+
+    return parseStringify(bank.documents[0]);
+  } catch (error) {
+    console.error("Error", error);
+    return null;
   }
-}
+};
